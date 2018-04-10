@@ -54,5 +54,22 @@ def get_training(dir, num_lines = 1000000):
 				print (float(cur_line) / num_lines) * 100, '%% loaded'
 	return data[:, :3][:].astype(int), data[:, 3:][:].astype(int)
 
+def get_validation_monitor(features, labels):
+	'''Returns validation monitor object for training monitor'''
+	validation_metrics = {
+    "accuracy":
+        tf.contrib.learn.MetricSpec(
+            metric_fn=tf.contrib.metrics.streaming_accuracy),
+    "precision":
+        tf.contrib.learn.MetricSpec(
+            metric_fn=tf.contrib.metrics.streaming_precision),
+    "recall":
+        tf.contrib.learn.MetricSpec(
+            metric_fn=tf.contrib.metrics.streaming_recall)
+	}
+	return tf.contrib.learn.monitors.ValidationMonitor(features,
+													   labels,
+													   every_n_steps=1)
+
 
 

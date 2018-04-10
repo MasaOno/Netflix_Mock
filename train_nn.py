@@ -5,7 +5,10 @@ import tensorflow as tf
 import models
 import utils
 
+tf.logging.set_verbosity(tf.logging.INFO)
+
 TRAIN_DATA_MINI = '/Users/masaono/Desktop/cs156b/um/train_mini.dta'
+VALIDATION_DATA_MINI = '/Users/masaono/Desktop/cs156b/um/validation_mini.dta'
 EPOCHS = 10
 BATCH_SIZE = 64
 
@@ -42,10 +45,13 @@ def train():
 	x, y = train_input_fn(TRAIN_DATA_MINI)
 	feature_column = get_feature_column(x)
 	estimator = get_estimator(params, feature_column, CONFIG)
+	val_x, val_y = train_input_fn(VALIDATION_DATA_MINI)
+	validation_monitor = utils.get_validation_monitor(val_x, val_y)
 	estimator.fit(x = x,
 				  y = y,
 				  steps = EPOCHS,
-				  batch_size = BATCH_SIZE)
+				  batch_size = BATCH_SIZE,
+				  monitors = [validation_monitor])
 
 if __name__ == "__main__":
     train()
