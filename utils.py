@@ -1,6 +1,7 @@
 '''Code for utilities'''
 import tensorflow as tf
 import numpy as np
+from skopt import gp_minimize
 
 def get_param(param, key):
 	'''Returns param if key exists'''
@@ -50,8 +51,8 @@ def get_training(dir, num_lines = 1000000):
 				data[cur_line][i] = int(line_split[i])
 			
 			cur_line += 1
-			if cur_line % 100000 == 0:
-				print (float(cur_line) / num_lines) * 100, '%% loaded'
+			# if cur_line % 100000 == 0:
+			# 	print (float(cur_line) / num_lines) * 100, '%% loaded'
 	return data[:, :3][:].astype(int), data[:, 3:][:].astype(int)
 
 def get_validation_monitor(features, labels):
@@ -70,6 +71,23 @@ def get_validation_monitor(features, labels):
 	return tf.contrib.learn.monitors.ValidationMonitor(features,
 													   labels,
 													   every_n_steps=1)
+
+def create_model_dir(base_dir, params):
+	'''Returns model directory path'''
+	for key in params:
+		base_dir += '_' + key + str(params[key])
+	return base_dir
+
+def run_hyperparam_search(func, dimensions, n_calls, params):
+	'''Calls skopt gp_minimize to do bayesian hyperparameter search. Returns search result'''
+	return gp_minimize(func=func,
+					   dimensions=dimensions,
+					   acq_func='EI',
+					   n_calls=n_calls,
+					   x0=params)
+
+
+
 
 
 

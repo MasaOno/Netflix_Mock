@@ -3,10 +3,9 @@ import tensorflow as tf
 
 import utils
 
-def DNN_classifier(params, feature_columns, config):
+def DNN_classifier(params, model_dir, feature_columns, config):
 	'''Returns DNN estimator object'''
-	hidden_units = map(int, params['hidden_units'].split(','))
-	model_dir = utils.get_param(params, 'model_dir')
+	hidden_units = params['layers'] * [params['units']]
 	n_classes = int(utils.get_param(params, 'n_classes'))
 	weight_column_name = utils.get_param(params, 'weight_column_name')
 	optimizer = utils.get_optimizer(utils.get_param(params, 'optimizer'), params['learning_rate'])
