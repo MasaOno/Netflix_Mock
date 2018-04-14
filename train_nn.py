@@ -29,6 +29,13 @@ def train_input_fn(dir):
 	features, labels = utils.get_training(TRAIN_DATA_MINI)
 	return features, labels
 
+def create_callable_train_input_fn(dir):
+	'''Returns callable training input function for predictions'''
+	data_dir = dir
+	def callable_input():
+		return train_input_fn(data_dir)
+	return callable_input
+
 def get_feature_column(features):
 	'''Returns infered feature column from features'''
 	feature_column = tf.contrib.learn.infer_real_valued_columns_from_input(features)
@@ -66,8 +73,8 @@ def train(params, hyperparam_search=False, dimensions=None, n_calls=None):
 								    steps = EPOCHS,
 							   	    batch_size = BATCH_SIZE,
 								    monitors = [validation_monitor])
-			print history
-			accuracy = evaluate.get_accuracy(estimator, (val_x, val_y))
+			validation_input = create_callable_train_input_fn(VALIDATION_DATA_MINI)
+			accuracy = evaluate.get_accuracy_model(estimator, validation_input)
 			global BEST_ACCURACY
 			print 'Accuracy: ' + str(accuracy)
 			if accuracy > BEST_ACCURACY:
@@ -100,9 +107,9 @@ if __name__ == "__main__":
 			  'units': 256,
 			  'n_classes': 6,
 			  'optimizer': 'adam',
-			  'learning_rate': 0.001,
+			  'learning_rate': 0.01,
 			  'activation_fn': 'softmax',
-			  'dropout': 0.5}
+			  'dropout': 0.1}
 	dimensions = [Integer(low=1, high=5, name='layers'),
 				  Integer(low=100, high=300, name='units'),
 				  Categorical(categories=['sgd', 'adagrad', 'momentum', 'adam', 'rms'], name='optimizer'),
@@ -110,7 +117,7 @@ if __name__ == "__main__":
 				  Categorical(categories=['relu', 'tanh', 'sigmoid', 'softmax'], name='activation_fn'),
 				  Real(low=0.0, high=0.9, name='dropout')]
 	result = train(params, hyperparam_search=True, dimensions=dimensions, n_calls=11)
-    print 'Final accuracy: ' + str(result)
+    # print 'Final accuracy: ' + str(result)
 
 
 

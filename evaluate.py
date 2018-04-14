@@ -2,33 +2,24 @@
 import tensorflow as tf
 import numpy as np
 from sklearn.feature_extraction.text import TfidfTransformer
-from tensorflow.contrib import predictor
+# from tensorflow.contrib import predictor
 
 '''Code to blend and evaluate trained models'''
 
-def get_accuracy_model(model, data, tfmodel = True):
-	if tfmodel: 
-		_, labels = data[:, 0]
-		#predictions = np.zeros(len(labels))
+def get_accuracy_model(model, data):
+	'''Return accuracy from tensorflow model'''
+	_, labels = data()
 
-		# STILL NOT SURE HOW DATA IS PASSED BECAUSE IN THE OLD VERSION IT LOOKED LIKE DATA WAS A FUNCTION!??!?!?
-		predictions = model.predict(input_fn = data)
-		
-		# convert predictions to 0/1
-		super_threshold_indices = predictions >= 0.5
-		predictions[super_threshold_indices] = 1
+	predictions = model.predict(input_fn = data)
 
-		below_threshold_indices = predictions < 0.5
-		predictions[below_threshold_indices] = 0
+ 	score = 0
+ 	val_length = 0
+ 	for j, p in enumerate(predictions):
+ 		if p == labels[j]:
+ 			score += 1
+ 		val_length += 1
 
-	 	score = 0
-	 	for j, p in enumerate(predictions): 
-	 		if p == labels[j]:
-	 			score += 1
-
-	 	return float(score) / len(predictions)
-	else: 
-		return 5
+ 	return float(score) / val_length
 
 def get_accuracy_dir(modelfile, data, tfmodel = True):
 	# modelfile = string
