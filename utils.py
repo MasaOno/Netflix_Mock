@@ -38,9 +38,9 @@ def get_optimizer(optimizer, learning_rate):
 
 # TODO: don't hardcode num_lines
 def get_training(dir, num_lines = 1000000):
-	'''Takes in directory of data
+	'''Takes filename of data file
 
-	   Returns: data_all, data_train, data_test
+	   Returns: input_data, output_data, full_data
 	'''
 	data = np.zeros((num_lines, 4)) #1000000 is hardcoded from mini train data
 	with open(dir) as f:
@@ -49,11 +49,13 @@ def get_training(dir, num_lines = 1000000):
 			line_split = line.split(' ')
 			for i in range(4):
 				data[cur_line][i] = int(line_split[i])
-			
+
 			cur_line += 1
-			# if cur_line % 100000 == 0:
-			# 	print (float(cur_line) / num_lines) * 100, '%% loaded'
-	return data[:, :3][:].astype(int), data[:, 3:][:].astype(int)
+			# TODO: for debugging
+			if cur_line % 1000000 == 0:
+				print (float(cur_line) / num_lines) * 100, '%% loaded'
+
+	return data[:, :3][:].astype(int), data[:, 3:][:].astype(int), data.astype(int)
 
 def get_validation_monitor(features, labels):
 	'''Returns validation monitor object for training monitor'''
@@ -85,9 +87,3 @@ def run_hyperparam_search(func, dimensions, n_calls, params):
 					   acq_func='EI',
 					   n_calls=n_calls,
 					   x0=params)
-
-
-
-
-
-
