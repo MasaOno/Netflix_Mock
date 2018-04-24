@@ -10,11 +10,11 @@ import evaluate
 import models
 import utils
 
-tf.logging.set_verbosity(tf.logging.INFO)
+tf.logging.set_verbosity(tf.logging.ERROR)
 
 TRAIN_DATA_MINI = '/Users/masaono/Desktop/cs156b/um/train_mini.dta'
 VALIDATION_DATA_MINI = '/Users/masaono/Desktop/cs156b/um/validation_mini.dta'
-EPOCHS = 10000
+EPOCHS = 100
 BATCH_SIZE = 64
 BEST_ACCURACY = 0.0
 
@@ -87,7 +87,8 @@ def train(params, hyperparam_search=False, dimensions=None, n_calls=None):
 			tf.reset_default_graph()
 			return -accuracy
 		result = utils.run_hyperparam_search(search, dimensions, n_calls, lst)
-		return result
+		global BEST_ACCURACY
+		return BEST_ACCURACY
 	#=================
 	else:
 		print params
@@ -100,14 +101,12 @@ def train(params, hyperparam_search=False, dimensions=None, n_calls=None):
 					 		    batch_size = BATCH_SIZE,
 					 		    monitors = [validation_monitor])
 		validation_input = create_callable_train_input_fn(VALIDATION_DATA_MINI)
-		print evaluate.get_accuracy_model(history, validation_input)
-		return estimator
-		# return evaluate.get_accuracy_model(estimator, validation_input)
+		return evaluate.get_accuracy_model(estimator, validation_input)
 
 if __name__ == "__main__":
 	print 'Training nn model...'
 	params = {'layers': 2,
-			  'units': 64,
+			  'units': 128,
 			  'n_classes': 6,
 			  'optimizer': 'adam',
 			  'learning_rate': 0.01,
@@ -116,13 +115,9 @@ if __name__ == "__main__":
 	dimensions = [Integer(low=1, high=5, name='layers'),
 				  Integer(low=100, high=300, name='units'),
 				  Categorical(categories=['sgd', 'adagrad', 'momentum', 'adam', 'rms'], name='optimizer'),
-				  Real(low=0.0001, high=0.3, name='learning_rate'),
-				  Categorical(categories=['relu', 'tanh', 'sigmoid', 'softmax'], name='activation_fn'),
-				  Real(low=0.0, high=0.9, name='dropout')]
-	result = train(params, hyperparam_search=False, dimensions=dimensions, n_calls=11)
-    # print 'Final accuracy: ' + str(result)
-
-
-
-
+				  Real(low=0.0001, high=0.1, name='learning_rate'),
+				  Categorical(categories=['relu', 'sigmoid', 'softmax'], name='activation_fn'),
+				  Real(low=0.0, high=0.5, name='dropout')]
+	result = train(params, hyperparam_search=True, dimensions=dimensions, n_calls=50)
+	print 'Final accuracy: ' + str(result)
 

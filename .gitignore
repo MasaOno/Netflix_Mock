@@ -1,4 +1,6 @@
 .DS_Store
 data
 models
-
+evaluate.pyc
+models.pyc
+utils.pyc
