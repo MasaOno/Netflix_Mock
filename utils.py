@@ -42,7 +42,8 @@ def get_training(dir, num_lines = 1000000):
 
 	   Returns: input_data, output_data, full_data
 	'''
-	data = np.zeros((num_lines, 4)) #1000000 is hardcoded from mini train data
+	num_lines = sum(1 for line in open(dir))
+	data = np.zeros((num_lines, 4))
 	with open(dir) as f:
 		cur_line = 0
 		for line in f:

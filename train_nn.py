@@ -14,7 +14,7 @@ tf.logging.set_verbosity(tf.logging.ERROR)
 
 TRAIN_DATA_MINI = '/Users/masaono/Desktop/cs156b/um/train_mini.dta'
 VALIDATION_DATA_MINI = '/Users/masaono/Desktop/cs156b/um/validation_mini.dta'
-EPOCHS = 10
+EPOCHS = 100
 BATCH_SIZE = 64
 BEST_ACCURACY = 0.0
 
@@ -26,7 +26,7 @@ CONFIG = tf.contrib.learn.RunConfig(
 
 def train_input_fn(dir):
 	'''Returns training input function'''
-	features, labels = utils.get_training(TRAIN_DATA_MINI)
+	features, labels = utils.get_training(dir)
 	return features, labels
 
 def create_callable_train_input_fn(dir):
@@ -43,7 +43,7 @@ def get_feature_column(features):
 
 def get_estimator(params, model_dir, feature_column, CONFIG):
 	'''Returns estimator object'''
-	return models.DNN_classifier(params, model_dir, feature_column, CONFIG)
+	return models.DNN_regressor(params, model_dir, feature_column, CONFIG)
 
 def train(params, hyperparam_search=False, dimensions=None, n_calls=None):
 	'''Start training'''
@@ -87,7 +87,8 @@ def train(params, hyperparam_search=False, dimensions=None, n_calls=None):
 			tf.reset_default_graph()
 			return -accuracy
 		result = utils.run_hyperparam_search(search, dimensions, n_calls, lst)
-		return result
+		global BEST_ACCURACY
+		return BEST_ACCURACY
 	#=================
 	else:
 		print params
@@ -95,31 +96,28 @@ def train(params, hyperparam_search=False, dimensions=None, n_calls=None):
 		val_x, val_y = train_input_fn(VALIDATION_DATA_MINI)
 		validation_monitor = utils.get_validation_monitor(val_x, val_y)
 		history = estimator.fit(x = x,
-					  y = y,
-					  steps = EPOCHS,
-					  batch_size = BATCH_SIZE,
-					  monitors = [validation_monitor])
-		return evaluate.get_accuracy(estimator, (val_x, val_y))
+							    y = y,
+					 		    steps = EPOCHS,
+					 		    batch_size = BATCH_SIZE,
+					 		    monitors = [validation_monitor])
+		validation_input = create_callable_train_input_fn(VALIDATION_DATA_MINI)
+		return evaluate.get_accuracy_model(estimator, validation_input)
 
 if __name__ == "__main__":
 	print 'Training nn model...'
 	params = {'layers': 2,
-			  'units': 256,
+			  'units': 128,
 			  'n_classes': 6,
 			  'optimizer': 'adam',
 			  'learning_rate': 0.01,
-			  'activation_fn': 'softmax',
+			  'activation_fn': 'relu',
 			  'dropout': 0.1}
 	dimensions = [Integer(low=1, high=5, name='layers'),
 				  Integer(low=100, high=300, name='units'),
 				  Categorical(categories=['sgd', 'adagrad', 'momentum', 'adam', 'rms'], name='optimizer'),
-				  Real(low=0.0001, high=0.3, name='learning_rate'),
-				  Categorical(categories=['relu', 'tanh', 'sigmoid', 'softmax'], name='activation_fn'),
-				  Real(low=0.0, high=0.9, name='dropout')]
-	result = train(params, hyperparam_search=True, dimensions=dimensions, n_calls=11)
-    # print 'Final accuracy: ' + str(result)
-
-
-
-
+				  Real(low=0.0001, high=0.1, name='learning_rate'),
+				  Categorical(categories=['relu', 'sigmoid', 'softmax'], name='activation_fn'),
+				  Real(low=0.0, high=0.5, name='dropout')]
+	result = train(params, hyperparam_search=True, dimensions=dimensions, n_calls=50)
+	print 'Final accuracy: ' + str(result)
 
