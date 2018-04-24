@@ -2,7 +2,7 @@
 import tensorflow as tf
 import numpy as np
 from sklearn.feature_extraction.text import TfidfTransformer
-# from tensorflow.contrib import predictor
+from tensorflow.contrib import predictor
 
 '''Code to blend and evaluate trained models'''
 
@@ -15,7 +15,7 @@ def get_accuracy_model(model, data):
  	score = 0
  	val_length = 0
  	for j, p in enumerate(predictions):
- 		if p == labels[j]:
+ 		if np.round(p) == float(labels[j]):
  			score += 1
  		val_length += 1
 

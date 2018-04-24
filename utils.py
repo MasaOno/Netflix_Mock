@@ -37,22 +37,20 @@ def get_optimizer(optimizer, learning_rate):
 	return None
 
 # TODO: don't hardcode num_lines
-def get_training(dir, num_lines = 1000000):
+def get_training(dir):
 	'''Takes in directory of data
 
 	   Returns: data_all, data_train, data_test
 	'''
-	data = np.zeros((num_lines, 4)) #1000000 is hardcoded from mini train data
+	num_lines = sum(1 for line in open(dir))
+	data = np.zeros((num_lines, 4))
 	with open(dir) as f:
 		cur_line = 0
 		for line in f:
 			line_split = line.split(' ')
 			for i in range(4):
 				data[cur_line][i] = int(line_split[i])
-			
 			cur_line += 1
-			# if cur_line % 100000 == 0:
-			# 	print (float(cur_line) / num_lines) * 100, '%% loaded'
 	return data[:, :3][:].astype(int), data[:, 3:][:].astype(int)
 
 def get_validation_monitor(features, labels):

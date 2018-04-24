@@ -3,7 +3,7 @@ import tensorflow as tf
 
 import utils
 
-def DNN_classifier(params, model_dir, feature_columns, config):
+def DNN_regressor(params, model_dir, feature_columns, config):
 	'''Returns DNN estimator object'''
 	hidden_units = params['layers'] * [params['units']]
 	n_classes = int(utils.get_param(params, 'n_classes'))
@@ -18,10 +18,9 @@ def DNN_classifier(params, model_dir, feature_columns, config):
 	input_layer_min_slice_size = utils.get_param(params, 'input_layer_min_slice_size')
 	label_keys = utils.get_param(params, 'label_keys')
 
-	return tf.contrib.learn.DNNClassifier(hidden_units = hidden_units,
+	return tf.contrib.learn.DNNRegressor(hidden_units = hidden_units,
 										  feature_columns = feature_columns,
 										  model_dir = model_dir,
-										  n_classes = n_classes,
 										  weight_column_name = weight_column_name,
 										  optimizer = optimizer,
 										  activation_fn = activation_fn,
@@ -31,5 +30,4 @@ def DNN_classifier(params, model_dir, feature_columns, config):
 										  config = config,
 										  feature_engineering_fn = feature_engineering_fn,
 										  embedding_lr_multipliers = embedding_lr_multipliers,
-										  input_layer_min_slice_size = input_layer_min_slice_size,
-										  label_keys = label_keys)
+										  input_layer_min_slice_size = input_layer_min_slice_size)
