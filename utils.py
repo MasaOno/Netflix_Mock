@@ -36,7 +36,6 @@ def get_optimizer(optimizer, learning_rate):
 		return tf.train.RMSPropOptimizer(learning_rate = learning_rate)
 	return None
 
-<<<<<<< HEAD
 def dummy():
 	data_dir = '/Users/masaono/Desktop/cs156b/um/train_all.dta'
 	num_lines = sum(1 for line in open(data_dir))
