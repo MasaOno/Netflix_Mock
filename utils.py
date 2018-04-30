@@ -36,6 +36,7 @@ def get_optimizer(optimizer, learning_rate):
 		return tf.train.RMSPropOptimizer(learning_rate = learning_rate)
 	return None
 
+<<<<<<< HEAD
 def dummy():
 	data_dir = '/Users/masaono/Desktop/cs156b/um/train_all.dta'
 	num_lines = sum(1 for line in open(data_dir))
@@ -52,9 +53,9 @@ def dummy():
 		c.close()
 
 def get_training(dir):
-	'''Takes in directory of data
+	'''Takes filename of data file
 
-	   Returns: data_all, data_train, data_test
+	   Returns: input_data, output_data, full_data
 	'''
 
 	num_lines = sum(1 for line in open(dir))
@@ -65,8 +66,13 @@ def get_training(dir):
 			line_split = line.split(' ')
 			for i in range(4):
 				data[cur_line][i] = int(line_split[i])
+
 			cur_line += 1
-	return data[:, :3][:].astype(int), data[:, 3:][:].astype(int)
+			# TODO: for debugging
+			if cur_line % 1000000 == 0:
+				print (float(cur_line) / num_lines) * 100, '%% loaded'
+
+	return data[:, :3][:].astype(int), data[:, 3:][:].astype(int), data.astype(int)
 
 def get_validation_monitor(features, labels):
 	'''Returns validation monitor object for training monitor'''
@@ -98,9 +104,3 @@ def run_hyperparam_search(func, dimensions, n_calls, params):
 					   acq_func='EI',
 					   n_calls=n_calls,
 					   x0=params)
-
-
-
-
-
-
