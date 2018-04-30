@@ -6,7 +6,6 @@ import utils
 def DNN_regressor(params, model_dir, feature_columns, config):
 	'''Returns DNN estimator object'''
 	hidden_units = params['layers'] * [params['units']]
-	n_classes = int(utils.get_param(params, 'n_classes'))
 	weight_column_name = utils.get_param(params, 'weight_column_name')
 	optimizer = utils.get_optimizer(utils.get_param(params, 'optimizer'), params['learning_rate'])
 	activation_fn = utils.get_activation(utils.get_param(params, 'activation_fn'))

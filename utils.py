@@ -36,12 +36,27 @@ def get_optimizer(optimizer, learning_rate):
 		return tf.train.RMSPropOptimizer(learning_rate = learning_rate)
 	return None
 
-# TODO: don't hardcode num_lines
+def dummy():
+	data_dir = '/Users/masaono/Desktop/cs156b/um/train_all.dta'
+	num_lines = sum(1 for line in open(data_dir))
+	curr_num = 0
+	with open(data_dir) as f:
+		b = open('/Users/masaono/Desktop/cs156b/um/train.dta', 'w')
+		c = open('/Users/masaono/Desktop/cs156b/um/validation.dta', 'w')
+		for line in f:
+			if curr_num < num_lines * 0.9:
+				b.write(line)
+			else:
+				c.write(line)
+		b.close()
+		c.close()
+
 def get_training(dir):
 	'''Takes in directory of data
 
 	   Returns: data_all, data_train, data_test
 	'''
+
 	num_lines = sum(1 for line in open(dir))
 	data = np.zeros((num_lines, 4))
 	with open(dir) as f:

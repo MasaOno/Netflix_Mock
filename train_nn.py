@@ -12,11 +12,11 @@ import utils
 
 tf.logging.set_verbosity(tf.logging.ERROR)
 
-TRAIN_DATA_MINI = '/Users/masaono/Desktop/cs156b/um/train_mini.dta'
+TRAIN_DATA_MINI = '/Users/masaono/Desktop/cs156b/um/train.dta'
 VALIDATION_DATA_MINI = '/Users/masaono/Desktop/cs156b/um/validation_mini.dta'
-EPOCHS = 100
+EPOCHS = 50000
 BATCH_SIZE = 64
-BEST_ACCURACY = 0.0
+BEST_ACCURACY = 100
 
 CONFIG = tf.contrib.learn.RunConfig(
     		save_checkpoints_steps = 1000,
@@ -74,19 +74,21 @@ def train(params, hyperparam_search=False, dimensions=None, n_calls=None):
 							   	    batch_size = BATCH_SIZE,
 								    monitors = [validation_monitor])
 			validation_input = create_callable_train_input_fn(VALIDATION_DATA_MINI)
-			accuracy = evaluate.get_accuracy_model(estimator, validation_input)
+			accuracy = evaluate.get_rmse_model(estimator, validation_input)
 			global BEST_ACCURACY
-			print 'Accuracy: ' + str(accuracy)
-			if accuracy > BEST_ACCURACY:
+			print 'rmse: ' + str(accuracy)
+			if accuracy < BEST_ACCURACY:
 				print 'Exporting model...'
 				feature_spec = tf.feature_column.make_parse_example_spec(feature_column)
 				serving_input_fn = build_parsing_serving_input_fn(feature_spec)
 				estimator.export_savedmodel(new_model_dir, serving_input_fn)
 				BEST_ACCURACY = accuracy
+			print 'Best rmse: ' + str(BEST_ACCURACY)
 			del estimator
 			tf.reset_default_graph()
-			return -accuracy
+			return accuracy
 		result = utils.run_hyperparam_search(search, dimensions, n_calls, lst)
+		print result
 		global BEST_ACCURACY
 		return BEST_ACCURACY
 	#=================
@@ -101,23 +103,24 @@ def train(params, hyperparam_search=False, dimensions=None, n_calls=None):
 					 		    batch_size = BATCH_SIZE,
 					 		    monitors = [validation_monitor])
 		validation_input = create_callable_train_input_fn(VALIDATION_DATA_MINI)
-		return evaluate.get_accuracy_model(estimator, validation_input)
+		return evaluate.get_rmse_model(estimator, validation_input)
 
 if __name__ == "__main__":
 	print 'Training nn model...'
-	params = {'layers': 2,
-			  'units': 128,
-			  'n_classes': 6,
-			  'optimizer': 'adam',
-			  'learning_rate': 0.01,
-			  'activation_fn': 'relu',
+	params = {'layers': 3,
+			  'units': 256,
+			  'optimizer': 'adagrad',
+			  'learning_rate': 0.001,
+			  'activation_fn': 'sigmoid',
 			  'dropout': 0.1}
 	dimensions = [Integer(low=1, high=5, name='layers'),
 				  Integer(low=100, high=300, name='units'),
-				  Categorical(categories=['sgd', 'adagrad', 'momentum', 'adam', 'rms'], name='optimizer'),
-				  Real(low=0.0001, high=0.1, name='learning_rate'),
+				  Categorical(categories=['adagrad', 'adam', 'rms'], name='optimizer'),
+				  # Categorical(categories=['sgd', 'adagrad', 'momentum', 'adam', 'rms'], name='optimizer'),
+				  Real(low=0.0001, high=0.05, name='learning_rate'),
+				  # Categorical(categories=['sigmoid, relu'], name='activation_fn'),
 				  Categorical(categories=['relu', 'sigmoid', 'softmax'], name='activation_fn'),
 				  Real(low=0.0, high=0.5, name='dropout')]
 	result = train(params, hyperparam_search=True, dimensions=dimensions, n_calls=50)
-	print 'Final accuracy: ' + str(result)
+	print 'Final rmse: ' + str(result)
 

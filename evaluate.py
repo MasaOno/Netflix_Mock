@@ -6,20 +6,31 @@ from tensorflow.contrib import predictor
 
 '''Code to blend and evaluate trained models'''
 
+def get_rmse_model(model, data):
+	'''Return rmse from tensorflow model'''
+	_, labels = data()
+
+	predictions = model.predict(input_fn = data)
+	s = 0.0
+	val_length = 0
+	for j, p in enumerate(predictions):
+		s += ((p - float(labels[j])) ** 2)
+		val_length += 1
+	return float(s) /  float(val_length)
+
 def get_accuracy_model(model, data):
 	'''Return accuracy from tensorflow model'''
 	_, labels = data()
 
 	predictions = model.predict(input_fn = data)
+	score = 0
+	val_length = 0
+	for j, p in enumerate(predictions):
+		if np.round(p) == float(labels[j]):
+			score += 1
+		val_length += 1
 
- 	score = 0
- 	val_length = 0
- 	for j, p in enumerate(predictions):
- 		if np.round(p) == float(labels[j]):
- 			score += 1
- 		val_length += 1
-
- 	return float(score) / val_length
+	return float(score) / val_length
 
 def get_accuracy_dir(modelfile, data, tfmodel = True):
 	# modelfile = string
