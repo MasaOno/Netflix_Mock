@@ -30,3 +30,17 @@ def DNN_regressor(params, model_dir, feature_columns, config):
 										  feature_engineering_fn = feature_engineering_fn,
 										  embedding_lr_multipliers = embedding_lr_multipliers,
 										  input_layer_min_slice_size = input_layer_min_slice_size)
+
+def tensor_forest(params):
+	'''Returns tensorforest estimator object'''
+	num_classes = int(utils.get_param(params, 'num_classes'))
+	num_features = int(utils.get_param(params, 'num_features'))
+	regression = bool(utils.get_param(params, 'regression'))
+	num_trees = int(utils.get_param(params, 'num_trees'))
+	max_nodes = int(utils.get_param(params, 'max_nodes'))
+	tensor_forest_params = tf.contrib.tensor_forest.python.tensor_forest.ForestHParams(num_classes = num_classes,
+																					   num_features = num_features,
+																					   regression = regression,
+																					   num_trees = num_trees,
+																					   max_nodes = max_nodes)
+	return tf.contrib.tensor_forest.client.random_forest.TensorForestEstimator(tensor_forest_params)

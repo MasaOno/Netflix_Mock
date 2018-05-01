@@ -53,7 +53,7 @@ def train():
 	print 'Factorizing...'
 	model = run_svd(train_data, params, svdpp = True)
 	predictions = model.test(test_data)
-	print predictions
+	# print predictions
 	print get_accuracy_temp(predictions)
 
 if __name__ == '__main__':

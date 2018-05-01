@@ -56,7 +56,7 @@ def get_training(dir):
 			if cur_line % 1000000 == 0:
 				print (float(cur_line) / num_lines) * 100, '%% loaded'
 
-	return data[:, :3][:].astype(int), data[:, 3:][:].astype(int), data.astype(int)
+	return data[:, :3][:].astype('float32'), data[:, 3:][:].astype('float32'), data.astype(int)
 
 def get_validation_monitor(features, labels):
 	'''Returns validation monitor object for training monitor'''

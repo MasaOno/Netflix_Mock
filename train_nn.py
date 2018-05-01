@@ -1,4 +1,4 @@
-'''Code for training models'''
+'''Code for training nn'''
 import numpy as np
 import tensorflow as tf
 from tensorflow.contrib.learn.python.learn.utils.input_fn_utils import build_parsing_serving_input_fn
@@ -26,7 +26,7 @@ CONFIG = tf.contrib.learn.RunConfig(
 
 def train_input_fn(dir):
 	'''Returns training input function'''
-	features, labels = utils.get_training(dir)
+	features, labels, _ = utils.get_training(dir)
 	return features, labels
 
 def create_callable_train_input_fn(dir):
