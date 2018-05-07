@@ -7,14 +7,21 @@ import utils
 
 TRAIN_DATA_MINI = '/Users/masaono/Desktop/cs156b/um/validation_mini.dta'
 VALIDATION_DATA_MINI = '/Users/masaono/Desktop/cs156b/um/validation_mini.dta'
+TRAIN_DATA_FULL = '/Users/masaono/Desktop/cs156b/um/train_all.dta'
+VALIDATION_DATA_FULL = '/Users/masaono/Desktop/cs156b/um/validation.dta'
+TEST_DATA_FULL = '/Users/masaono/Desktop/cs156b/um/qual.dta'
 
-def get_training(train_dir, test_dir):
+def get_training(train_dir, validation_dir, test_dir):
 	'''Returns (train, test) data object'''
 	reader = Reader(line_format='user item timestamp rating', sep=' ', rating_scale=(1, 5))
+	reader_test = Reader(line_format='user item rating', sep=' ', rating_scale=(1, 2243))
 	train_data = Dataset.load_from_file(train_dir, reader=reader)
-	test_data = Dataset.load_from_file(test_dir, reader=reader)
-	return train_data.build_full_trainset(), test_data.build_full_trainset().build_testset()
+	validation_data = Dataset.load_from_file(validation_dir, reader=reader)
+	test_data = Dataset.load_from_file(test_dir, reader=reader_test)
+	return train_data.build_full_trainset(), validation_data.build_full_trainset().build_testset(), test_data.build_full_trainset().build_testset()
 
+# TODO: Place temp functions in evaluate.py
+# =================================================================
 def get_accuracy_temp(predictions):
 	'''Returns accuracy from surprise model predictions'''
 	err = 0
@@ -22,6 +29,22 @@ def get_accuracy_temp(predictions):
 		if prediction[2] == round(prediction[3]):
 			err += 1
 	return err / float(len(predictions))
+
+def get_rmse_temp(predictions):
+	'''Returns accuracy from surprise model predictions'''
+	s = 0.0
+	val_length = 0
+	for prediction in predictions:
+		s += ((prediction[2] - float(prediction[3])) ** 2)
+		val_length += 1
+	return float(s) /  float(val_length)
+
+def print_predictions_temp(predictions, output_dir):
+	'''Creates prediction ourput file from predictions'''
+	with open(output_dir, 'w') as f:
+		for prediction in predictions:
+			f.write(str(round(prediction[3], 3)) + '\n')
+# =================================================================
 
 def run_svd(data, params, svdpp = False):
 	'''Returns trained SVD model based on matrix factorization'''
@@ -43,18 +66,21 @@ def run_svd(data, params, svdpp = False):
 def train():
 	params = {'biased': True,
 			  'n_factors': 40,
-			  'n_epochs': 10,
+			  'n_epochs': 250,
 			  'learning_rate': 0.001,
 			  'reg': 0.1}
 	print 'Training SVD model...'
 	print params
 	print 'Loading data...'
-	train_data, test_data = get_training(TRAIN_DATA_MINI, VALIDATION_DATA_MINI)
+	train_data, validation_data, test_data = get_training(TRAIN_DATA_FULL, VALIDATION_DATA_FULL, TEST_DATA_FULL)
 	print 'Factorizing...'
 	model = run_svd(train_data, params, svdpp = True)
+	# Get rmse from validation
+	predictions = model.test(validation_data)
+	print 'rmse: ' + str(get_rmse_temp(predictions))
+	# Print predictions
 	predictions = model.test(test_data)
-	# print predictions
-	print get_accuracy_temp(predictions)
+	print_predictions_temp(predictions, './predictions/svdpp.txt')
 
 if __name__ == '__main__':
 	train()
