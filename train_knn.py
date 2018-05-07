@@ -24,29 +24,55 @@ UM_data = '/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/um/al
 
 
 def train_knn(UM_training_data):
-    common_viewers = np.zeros((NUM_MOVIES+1, NUM_MOVIES+1)).astype(int) # cv[m][n], m < n
-    m_avg = np.zeros((NUM_MOVIES+1, NUM_MOVIES+1))
-    n_avg = np.zeros((NUM_MOVIES+1, NUM_MOVIES+1))
+    # Pre-calculated statistics: train once and predict forever
+    # For a Movie pair (m, n) with common viewers
+    # arr[m][n], m < n
+    common_viewers = np.zeros((NUM_MOVIES+1, NUM_MOVIES+1)).astype(int)
+    m_sum = np.zeros((NUM_MOVIES+1, NUM_MOVIES+1))
+    n_sum = np.zeros((NUM_MOVIES+1, NUM_MOVIES+1))
+    mn_sum = np.zeros((NUM_MOVIES+1, NUM_MOVIES+1))
+    mm_sum = np.zeros((NUM_MOVIES+1, NUM_MOVIES+1))
+    nn_sum = np.zeros((NUM_MOVIES+1, NUM_MOVIES+1))
+
+    # TODO calculate mAvg for all viewers (not common viewer). can do it in first for loop.
 
     start_user_idx = 0
     end_user_idx = 0
     while True:
+        # TODO: delete for production
         print float(start_user_idx) / len(UM_training_data), 'complete', start_user_idx, len(UM_training_data)
+
+        # Move the end_user_idx pointer to the final rating made by that user
         while end_user_idx != len(UM_training_data) - 1 and UM_training_data[end_user_idx][0] == UM_training_data[end_user_idx + 1][0]:
             end_user_idx += 1
 
+        # Iterate through the movies rated by the current user
         # indexed [m][n]
         for i in range(start_user_idx, end_user_idx + 1):
             for j in range(i + 1, end_user_idx + 1):
-                movie_idx_m = min(UM_training_data[i][1], UM_training_data[j][1]) # smaller movie number
-                movie_idx_n = max(UM_training_data[i][1], UM_training_data[j][1]) # bigger movie number
+                # We need this bc we fill only half the matrix to avoid duplicated data
 
-                data_idx_m = i if UM_training_data[i][1] == movie_idx_m else j # row number with smaller movie number
-                data_idx_n = i if UM_training_data[i][1] == movie_idx_n else j
+                # TODO: 5/1/ opt 1. take advantage of data ordering
+                # movie_idx_m = min(UM_training_data[i][1], UM_training_data[j][1]) # smaller movie number
+                # movie_idx_n = max(UM_training_data[i][1], UM_training_data[j][1]) # bigger movie number
+                movie_idx_m = UM_training_data[i][1] # smaller movie number
+                movie_idx_n = UM_training_data[j][1]
+
+                # TODO: 5/1/ opt 1. take advantage of data ordering
+                # row number of movie
+                # data_idx_m = i if UM_training_data[i][1] == movie_idx_m else j
+                # data_idx_n = i if UM_training_data[i][1] == movie_idx_n else j
+                ####
+                # data_idx_m = i
+                # data_idx_n = j
+
 
                 common_viewers[movie_idx_m][movie_idx_n] += 1
-                m_avg[movie_idx_m][movie_idx_n] += UM_training_data[data_idx_m][3]
-                n_avg[movie_idx_m][movie_idx_n] += UM_training_data[data_idx_n][3]
+                m_sum[movie_idx_m][movie_idx_n] += UM_training_data[i][3]
+                n_sum[movie_idx_m][movie_idx_n] += UM_training_data[j][3]
+                mn_sum[movie_idx_m][movie_idx_n] += UM_training_data[i][3] * UM_training_data[j][3]
+                mm_sum[movie_idx_m][movie_idx_n] += UM_training_data[i][3] * UM_training_data[i][3]
+                nn_sum[movie_idx_m][movie_idx_n] += UM_training_data[j][3] * UM_training_data[j][3]
 
         if end_user_idx == len(UM_training_data) - 1:
             break
@@ -54,23 +80,26 @@ def train_knn(UM_training_data):
             end_user_idx += 1
             start_user_idx = end_user_idx
 
-    print 'do div'
-    for i in range(NUM_MOVIES + 1):
-        if i % 500 == 0:
-            print i
-        for j in range(i, NUM_MOVIES + 1):
-            # m_avg[i][j] = m_avg[i][j] / common_viewers[i][j] if common_viewers[i][j] != 0 else 0
-            # n_avg[i][j] = n_avg[i][j] / common_viewers[i][j] if common_viewers[i][j] != 0 else 0
-            if common_viewers[i][j] != 0:
-                m_avg[i][j] = m_avg[i][j] / common_viewers[i][j]
-                n_avg[i][j] = n_avg[i][j] / common_viewers[i][j]
+    # print 'do div'
+    # for i in range(NUM_MOVIES + 1):
+    #     if i % 500 == 0:
+    #         print i
+    #     for j in range(i, NUM_MOVIES + 1):
+    #         # m_avg[i][j] = m_avg[i][j] / common_viewers[i][j] if common_viewers[i][j] != 0 else 0
+    #         # n_avg[i][j] = n_avg[i][j] / common_viewers[i][j] if common_viewers[i][j] != 0 else 0
+    #         if common_viewers[i][j] != 0:
+    #             m_avg[i][j] = m_avg[i][j] / common_viewers[i][j]
+    #             n_avg[i][j] = n_avg[i][j] / common_viewers[i][j]
 
     # f = open('common_viewser_test', 'w')
     # np.save(f, common_viewers)
     # f.close()
     print common_viewers[0:6, 0:6]
-    print m_avg[0:6, 0:6]
-    print n_avg[0:6, 0:6]
+    print m_sum[0:6, 0:6]
+    print n_sum[0:6, 0:6]
+    print mn_sum[0:6, 0:6]
+    print mm_sum[0:6, 0:6]
+    print nn_sum[0:6, 0:6]
 
 
 
@@ -103,11 +132,14 @@ def predict_knn(to_predict, training_data, params):
 
 
 
+# print('Training on 1mil row UM dataset')
+# training = utils.get_training(TRAIN_DATA_MINI)[2]
 
-training = utils.get_training(TRAIN_DATA_MINI, num_lines=NUM_ROWS_MINI)[2]
-# UM_training = utils.get_training(UM_data, num_lines=NUM_ROWS_FULL)[2]
+# print('Training on 100mil row UM dataset')
+# training = utils.get_training(UM_data, num_lines=NUM_ROWS_FULL)[2]
 
-um_logic = utils.get_training(TRAIN_DATA_LOGIC_TEST, num_lines=5)[2]
+print('Training on 5 row logic test dataset')
+training = utils.get_training(TRAIN_DATA_LOGIC_TEST)[2]
 
 
 to_predict = (1, 185, 2160) # correct answer is 1
@@ -122,5 +154,5 @@ train_knn(training)
 end_time = time.time()
 
 print 'done !!!!'
-print str((start_time-end_time)/60.) + 'minutes'
+print str((end_time-start_time)/60.) + ' minutes'
 # print(predict_knn(to_predict, training, params))
