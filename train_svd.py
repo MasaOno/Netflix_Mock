@@ -52,13 +52,15 @@ def run_svd(data, params, svdpp = False):
 		alg = SVDpp(n_factors=utils.get_param(params, 'n_factors'),
 			  n_epochs=utils.get_param(params, 'n_epochs'),
 			  lr_all=utils.get_param(params, 'learning_rate'),
-			  reg_all=utils.get_param(params, 'reg'))
+			  reg_all=utils.get_param(params, 'reg'),
+			  verbose=True)
 	else:
 		alg = SVD(biased=utils.get_param(params, 'biased'),
 				  n_factors=utils.get_param(params, 'n_factors'),
 				  n_epochs=utils.get_param(params, 'n_epochs'),
 				  lr_all=utils.get_param(params, 'learning_rate'),
-				  reg_all=utils.get_param(params, 'reg'))
+				  reg_all=utils.get_param(params, 'reg'),
+				  verbose=True)
 	alg.fit(data)
 	return alg
 
@@ -69,6 +71,7 @@ def train():
 			  'n_epochs': 250,
 			  'learning_rate': 0.001,
 			  'reg': 0.1}
+	model_dir = './models/svd/'
 	print 'Training SVD model...'
 	print params
 	print 'Loading data...'
@@ -81,6 +84,8 @@ def train():
 	# Print predictions
 	predictions = model.test(test_data)
 	print_predictions_temp(predictions, './predictions/svdpp.txt')
+	# Save model
+	surprise.dump.dump(utils.create_model_dir(model_dir, params), algo = model)
 
 if __name__ == '__main__':
 	train()
