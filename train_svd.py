@@ -7,9 +7,14 @@ import utils
 
 TRAIN_DATA_MINI = '/Users/masaono/Desktop/cs156b/um/validation_mini.dta'
 VALIDATION_DATA_MINI = '/Users/masaono/Desktop/cs156b/um/validation_mini.dta'
-TRAIN_DATA_FULL = '/Users/masaono/Desktop/cs156b/um/train_all.dta'
-VALIDATION_DATA_FULL = '/Users/masaono/Desktop/cs156b/um/validation.dta'
-TEST_DATA_FULL = '/Users/masaono/Desktop/cs156b/um/qual.dta'
+
+# TRAIN_DATA_FULL = '/Users/masaono/Desktop/cs156b/um/train_all.dta'
+# VALIDATION_DATA_FULL = '/Users/masaono/Desktop/cs156b/um/validation.dta'
+# TEST_DATA_FULL = '/Users/masaono/Desktop/cs156b/um/qual.dta'
+
+TRAIN_DATA_FULL = '/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/um_other/valid2.txt'
+VALIDATION_DATA_FULL = '/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/um_other/probe4.txt'
+TEST_DATA_FULL = '/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/um/qual.dta'
 
 def get_training(train_dir, validation_dir, test_dir):
 	'''Returns (train, test) data object'''
@@ -66,7 +71,7 @@ def run_svd(data, params, svdpp = False):
 def train():
 	params = {'biased': True,
 			  'n_factors': 40,
-			  'n_epochs': 250,
+			  'n_epochs': 50,
 			  'learning_rate': 0.001,
 			  'reg': 0.1}
 	print 'Training SVD model...'
@@ -80,7 +85,7 @@ def train():
 	print 'rmse: ' + str(get_rmse_temp(predictions))
 	# Print predictions
 	predictions = model.test(test_data)
-	print_predictions_temp(predictions, './predictions/svdpp.txt')
+	print_predictions_temp(predictions, './SVD_data/svdpp.txt')
 
 if __name__ == '__main__':
 	train()

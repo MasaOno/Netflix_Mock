@@ -128,7 +128,7 @@ def get_from_alldta(alldta_filename, allidx_filename, indeces_to_get):
 			if cur_line % 1000000 == 0:
 				print (float(cur_line) / num_lines_alldta) * 100, '%% loaded'
 
-	print 'loaded lines: ' + str(num_lines_output)
+	# print 'loaded lines: ' + str(num_lines_output)
 	return (data.astype(int))[:num_lines_output]
 
 def write_np_arr_to_file(np_arr, filename):

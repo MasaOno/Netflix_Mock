@@ -1,6 +1,14 @@
 // C code for KNN
 
 // TODO: for presentation: python expeced runtime 10hr
+/*
+        FUcked ass bug 1: flipped order for Qsort for weights
+
+*/
+
+
+
+// submit code: pdnijpwr
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +20,7 @@
 // MASA_UM: 2
 // ETHAN_UM_ONE_MIL: 3
 // ETHAN_UM_LOGIC: 4
+// ETHAN_UM_LOGIC2: 5
 #define TRAINING_DATA_VERSION 1
 
 // All data is in UM form
@@ -27,13 +36,30 @@
 #elif TRAINING_DATA_VERSION == 4 // 5 row test dataset
   #define TRAINING_DATA_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/UM_logic_test.txt"
   #define TRAINING_NUM_ROWS 5
+  #elif TRAINING_DATA_VERSION == 5 // 20 row test dataset
+    #define TRAINING_DATA_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/UM_logic_test.txt"
+    #define TRAINING_NUM_ROWS 20
 #endif
 
-#define TEST_INPUT_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/um/qual.dta"
-#define TEST_OUTPUT_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/KNN_UM_output.txt"
-#define TEST_NUM_ROWS 2749898
+// // For test submission
+// #define TEST_INPUT_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/um/qual.dta"
+// #define TEST_OUTPUT_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/KNN_UM_subToServer_output.txt"
+// #define TEST_NUM_ROWS 2749898
 
-// #define VALID_NUM_ROWS 1965045
+// For validation set: index 2
+#define TEST_INPUT_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/um_other/valid2.txt"
+#define TEST_OUTPUT_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/KNN_UM_output_VALIDATION.txt"
+#define TEST_NUM_ROWS 1965045
+
+// // For hidden set, idx3
+
+// // For probe set, idx4
+
+// // For training error, RMSE
+// #define TEST_INPUT_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/um_other/training1.txt"
+// #define TEST_OUTPUT_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/KNN_UM_output_TRAINING_PREDICTION.txt"
+// #define TEST_NUM_ROWS 94362233
+
 
 #define NUM_USERS 458293 // 1 indexed
 #define NUM_MOVIES 17770 // 1 indexed
@@ -43,7 +69,10 @@
 
 ////// KNN PARAMS
 #define MIN_CV 16
-#define MAX_NEIGHBORS 50
+#define MAX_NEIGHBORS 400
+
+#define COMPUTE_OR_LOAD 1 // 1 -> compute, 0 -> load
+
 
 // For each movie pair (m, n) where m < n
 // Statistics on users who rated both m and n
@@ -86,8 +115,20 @@ int max(int a, int b) {
   }
 }
 
+float round_pos_float(float num) {
+  return (float)((int)(num + .5));
+}
+
+/*
+For comparing 2 Movie neighbors
+
+Returns:
+  lt 0  : if a goes before b, a.weight > b.weight
+  0     : if same
+  gt 0  : if b goes before a, a.weight < b.weight
+*/
 int weight_compare(const void * a, const void * b) {
-  return (((struct MovieNeighbor *)a)->weight - ((struct MovieNeighbor *)b)->weight);
+  return -(((struct MovieNeighbor *)a)->weight - ((struct MovieNeighbor *)b)->weight);
 }
 
 void load_training(int * training_data) {
@@ -126,6 +167,50 @@ void load_training(int * training_data) {
   }
   fclose(training_data_file);
   printf("\n===============\n");
+}
+
+
+// TODO: move this constant
+#define PEARSON_DIR "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/KNN_data/"
+#define USER_STARTS_IDX_FILENAME "user_start_idxs.data"
+#define M_SUMS_FILENAME "m_sums.data"
+#define PEARSON_INTERMEDIATES_FILENAME "pearson_intermediates.data"
+
+void write_pearson_intermediate(int * user_start_idxs, int * m_sums, struct PearsonIntermediate * pearson_intermediates) {
+  printf("WRITING CALCULATED PEARSON INTERMEDIATES\n");
+
+  FILE *f;
+
+  f = fopen(PEARSON_DIR USER_STARTS_IDX_FILENAME, "wb");
+  fwrite(user_start_idxs, sizeof(int), NUM_USERS + 1, f);
+  fclose(f);
+
+  f = fopen(PEARSON_DIR M_SUMS_FILENAME, "wb");
+  fwrite(m_sums, sizeof(int), NUM_MOVIES + 1, f);
+  fclose(f);
+
+  f = fopen(PEARSON_DIR PEARSON_INTERMEDIATES_FILENAME, "wb");
+  fwrite(pearson_intermediates, sizeof(struct PearsonIntermediate), ((NUM_MOVIES + 1)*(NUM_MOVIES + 1)), f);
+  fclose(f);
+
+}
+
+void load_pearson_intermediate(int * user_start_idxs, int * m_sums, struct PearsonIntermediate * pearson_intermediates) {
+  printf("LOADING CALCULATED PEARSON INTERMEDIATES\n");
+
+  FILE *ifp;
+
+  ifp = fopen(PEARSON_DIR USER_STARTS_IDX_FILENAME, "rb");
+  fread(user_start_idxs, sizeof(int), NUM_USERS + 1, ifp);
+  fclose(ifp);
+
+  ifp = fopen(PEARSON_DIR M_SUMS_FILENAME, "rb");
+  fread(m_sums, sizeof(int), NUM_MOVIES + 1, ifp);
+  fclose(ifp);
+
+  ifp = fopen(PEARSON_DIR PEARSON_INTERMEDIATES_FILENAME, "rb");
+  fread(pearson_intermediates, sizeof(struct PearsonIntermediate), ((NUM_MOVIES + 1)*(NUM_MOVIES + 1)), ifp);
+  fclose(ifp);
 }
 
 void compute_pearson_intermediate(const int * training_data, int * user_start_idxs, int * m_sums, struct PearsonIntermediate * pearson_intermediates) {
@@ -181,7 +266,12 @@ void compute_pearson_intermediate(const int * training_data, int * user_start_id
         r_lower = 0.;
       }
       else {
-        r_lower = 0.5 * log((1. + pearson_intermediates[idx].r_raw) / (1. - pearson_intermediates[idx].r_raw)) - (1.96 / sqrt(pearson_intermediates[idx].common_viewers - 3));
+        // OLd formula
+        // r_lower = 0.5 * log((1. + pearson_intermediates[idx].r_raw) / (1. - pearson_intermediates[idx].r_raw)) - (1.96 / sqrt(pearson_intermediates[idx].common_viewers - 3));
+
+        // TODO try this new shit out
+        r_lower = tanh(0.5 * log((1. + pearson_intermediates[idx].r_raw) / (1. - pearson_intermediates[idx].r_raw)) - (1.96 / sqrt(pearson_intermediates[idx].common_viewers - 3)));
+
       }
 
 
@@ -300,6 +390,7 @@ void predict_test_set(const int * m_sums, const int * test_data_input, const int
     }
 
     float rating_pred = numerator / denominator;
+    rating_pred = round_pos_float(rating_pred);
 
     //write to test_data_output
     test_data_output[i] = rating_pred;
@@ -366,8 +457,15 @@ int main() {
 
   load_training(training_data);
 
-  compute_pearson_intermediate(training_data, user_start_idxs, m_sums, pearson_intermediates);
 
+#if COMPUTE_OR_LOAD == 1
+  printf("COMPUTING PEARSON \n");
+  compute_pearson_intermediate(training_data, user_start_idxs, m_sums, pearson_intermediates);
+  write_pearson_intermediate(user_start_idxs, m_sums, pearson_intermediates);
+#elif COMPUTE_OR_LOAD == 0
+  printf("LOADING PEARSON \n");
+  load_pearson_intermediate(user_start_idxs, m_sums, pearson_intermediates);
+#endif
   ////////////////////////////////
   //// End of "training" part ////
   ////////////////////////////////
@@ -388,4 +486,7 @@ int main() {
   // }
 
   write_output_to_file(test_data_output);
+
+
+  printf("####################\n");printf("####################\n");printf("####################\n");printf("####################\n");printf("####################\n");printf("####################\n");printf("####################\n");
 }
