@@ -55,13 +55,19 @@ dataset_filename = '/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/d
 # prediction_filename = "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/KNN_UM_output_PROBE.txt"
 
 # SVD
-prediction_filename = '/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/SVD_elo_UM_output_PROBE.txt'
+prediction_filename_prd = '/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/SVD_elo_UM_output_PROBE.txt'
+prediction_filename = '/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/NEW_SVD_elo_UM_output_PROBE.txt'
+prediction_filename_old = '/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/OLD_SVD_elo_UM_output_PROBE.txt'
 
 
 
 
 # prediction_filename ='/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/KNN_UM_output_TRAINING_PREDICTION.txt' # Training Errrp
 
+prod_rmse = validation_rmse(dataset_filename, prediction_filename_prd)
+opt_rmse = validation_rmse(dataset_filename, prediction_filename)
+opt_rmse_old = validation_rmse(dataset_filename, prediction_filename_old)
 
-knn_rmse = validation_rmse(dataset_filename, prediction_filename)
-print 'knn_rmse', knn_rmse
+print 'opt rmse vs rmse old: ', opt_rmse , opt_rmse_old
+
+print 'prod rmse: ', prod_rmse

@@ -17,28 +17,41 @@ https://classes.soe.ucsc.edu/cmps242/Fall09/proj/mpercy_svd_paper.pdf
 #include <unordered_map>
 #include <tuple>
 #include <utility>      // std::pair, std::make_pair
+#include <iostream>
+#include <stdexcept>
+#include <stdio.h>
+#include <string>
 
 // SVD parameters
 #define L_RATE 0.001
-#define NUM_FEATURES 40
-#define EPOCHS 40
+#define NUM_FEATURES 60
+#define EPOCHS 120
+
+
+
 /*
 #define L_RATE 0.001
-#define NUM_FEATURES 10
-#define EPOCHS 1
--> 3.8
-
-#define L_RATE 0.001
-#define NUM_FEATURES 10
-#define EPOCHS 10
+#define NUM_FEATURES 8
+#define EPOCHS 20
 ->
 
+WITHOUT speed PT
 #define L_RATE 0.001
-#define NUM_FEATURES 40
-#define EPOCHS 100
+#define NUM_FEATURES 2
+#define EPOCHS 5
+knn_rmse 1.08850537435
+
+
+
 
 
 */
+
+
+
+/// HELO
+// 0.953724069767, training1
+// trying out full_training
 
 // Constants
 #define NUM_USERS 458293 // 1 indexed
@@ -51,18 +64,23 @@ https://classes.soe.ucsc.edu/cmps242/Fall09/proj/mpercy_svd_paper.pdf
 // All data is in UM form
 #if TRAINING_DATA_VERSION == 1 // Full UM dataset on Ethan's machine
 // TODO: path here
-  #define TRAINING_DATA_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/um_other/training1.txt"
-  #define TRAINING_NUM_ROWS 94362233
+  // #define TRAINING_DATA_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/um_other/training1.txt"
+  // #define TRAINING_NUM_ROWS 94362233
+
+
+  #define TRAINING_DATA_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/um_other/full_training.txt"
+#define TRAINING_NUM_ROWS 99666408
+
 #endif
 
 
 
   /* CHOOSE SET TO PREDICT ON  */
 
-  // // For test submission
-  // #define TEST_INPUT_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/um/qual.dta"
-  // #define TEST_OUTPUT_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/KNN_UM_subToServer_output.txt"
-  // #define TEST_NUM_ROWS 2749898
+  // For test submission
+  #define ACTUAL_TEST_INPUT_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/um/qual.dta"
+  #define ACTUAL_TEST_OUTPUT_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/SVD_UM_subToServer_output.txt"
+  #define ACTUAL_TEST_NUM_ROWS 2749898
 
   // // For validation set: index 2
   // #define TEST_INPUT_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/um_other/valid2.txt"
@@ -71,6 +89,7 @@ https://classes.soe.ucsc.edu/cmps242/Fall09/proj/mpercy_svd_paper.pdf
 
   // // For hidden set, idx3
 
+ // VALIDATION
   // // For probe set, idx4
   // TODO: path here
   #define TEST_INPUT_PATH "/Users/ethanlo1/Documents/16th/3rd_term/CS156/Netflix_Mock/data/um_other/probe4.txt"
@@ -92,6 +111,7 @@ https://classes.soe.ucsc.edu/cmps242/Fall09/proj/mpercy_svd_paper.pdf
 
   /* ~~END~~ CHOOSE SET TO PREDICT ON ~~END~~ */
 
+// TODO: i dont think this is used?? Deletee
 typedef std::pair<int,int> pair;
 struct pair_hash
 {
@@ -101,6 +121,25 @@ struct pair_hash
         return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
     }
 };
+
+
+std::string exec(const char* cmd) {
+    char buffer[128];
+    std::string result = "";
+    FILE* pipe = popen(cmd, "r");
+    if (!pipe) throw std::runtime_error("popen() failed!");
+    try {
+        while (!feof(pipe)) {
+            if (fgets(buffer, 128, pipe) != NULL)
+                result += buffer;
+        }
+    } catch (...) {
+        pclose(pipe);
+        throw;
+    }
+    pclose(pipe);
+    return result;
+}
 
 void load_training(int * training_data) {
     //// Read in training data
@@ -140,6 +179,8 @@ void load_training(int * training_data) {
     printf("\n===============\n");
   }
 
+
+// This shuold actually be called 'load validation'
 void load_test(int * test_data_input) {
     FILE * test_data_file;
     char line_buf [100]; // holds each line
@@ -183,6 +224,50 @@ void load_test(int * test_data_input) {
     printf("\n===============\n");
   }
 
+  void load_test2(int * test_data_input) {
+      FILE * test_data_file;
+      char line_buf [100]; // holds each line
+      test_data_file = fopen(ACTUAL_TEST_INPUT_PATH, "r");
+      if (!test_data_file) {
+        return;
+      }
+      // For each line write the 4 columns
+      int line_buf_idx = 0;
+      int num_buf_idx = 0;
+      char num_buf [20];
+      int i = 0;
+      int line_num = 0;
+      while (fgets(line_buf, 100, test_data_file) != NULL) { // for each line
+        if (line_num % 100000 == 0) {
+          printf("\r%f percent test data loaded", ((float)(line_num)/(float)(ACTUAL_TEST_NUM_ROWS))*100);
+        }
+
+        // each line is: user<space>movie<space>date<newline>
+        for (i = 0; i < ELEMS_IN_TEST_ROW; i++) {
+          while (line_buf[line_buf_idx] != ' ' && line_buf[line_buf_idx] != '\n') {
+            num_buf[num_buf_idx] = line_buf[line_buf_idx];
+            line_buf_idx += 1;
+            num_buf_idx += 1;
+          }
+          num_buf[num_buf_idx] = ' ';
+
+          // WTFFFFFF
+          // training_data[line_num * ELEMS_IN_TEST_ROW + i] = atoi(num_buf);
+          test_data_input[line_num * ELEMS_IN_TEST_ROW + i] = atoi(num_buf);
+          //WTFFFFFF
+
+
+          line_buf_idx += 1;
+          num_buf_idx = 0;
+        }
+        line_buf_idx = 0;
+        line_num += 1;
+      }
+      fclose(test_data_file);
+      printf("\n===============\n");
+    }
+
+
 void write_output_to_file(const float * test_data_output) {
 
     printf("Writing the predictions to: %s\n", TEST_OUTPUT_PATH);
@@ -205,6 +290,29 @@ void write_output_to_file(const float * test_data_output) {
     fclose(output_file);
   }
 
+// this is for the test output, the other is for validation. htis code is ass
+  void write_output_to_file2(const float * test_data_output) {
+
+      printf("Writing the predictions to: %s\n", ACTUAL_TEST_OUTPUT_PATH);
+
+      FILE * output_file;
+      output_file = fopen(ACTUAL_TEST_OUTPUT_PATH, "w");
+
+      int hail_satan;
+      for(hail_satan = 0; hail_satan < ACTUAL_TEST_NUM_ROWS; hail_satan++) {
+        if(hail_satan % 10000 == 0) {
+          printf("\r%f writing predictions to file", ((float)hail_satan) / ((float)ACTUAL_TEST_NUM_ROWS) );
+        }
+        char buffer [20];
+        sprintf(buffer, "%.3f\n", test_data_output[hail_satan]);
+        fputs(buffer, output_file);
+      }
+
+      printf("\nwrote %d predictions to file\n", hail_satan);
+
+      fclose(output_file);
+    }
+
 /*
   For training. saves previously computed.
 
@@ -222,9 +330,18 @@ double predictRatingTrain(int userNumber, int movieNumber, const double * userFe
         // cumsum.insert(std::make_pair(user, movie), 0.);
         // cumSum.count(std::make_pair(user, movie));
         // cumsum[std::make_pair(userNumber, movieNumber)] += 6969.
-    double sum = cumSum[curTrainingRow];
+    // double sum = cumSum[curTrainingRow];
+    //
+    // for (f = curFeatToComp; f < NUM_FEATURES; f++) {
+    //   sum += userFeature[f * (NUM_USERS + 1) + userNumber] * movieFeature[f * (NUM_MOVIES + 1) + movieNumber];
+    // }
+    //
+    // return sum;
 
-    for (f = curFeatToComp; f < NUM_FEATURES; f++) {
+
+
+    double sum = 0.;
+    for (f = 0; f < NUM_FEATURES; f++) {
       sum += userFeature[f * (NUM_USERS + 1) + userNumber] * movieFeature[f * (NUM_MOVIES + 1) + movieNumber];
     }
 
@@ -284,23 +401,25 @@ int main() {
   int * testDataInput = new int[(TEST_NUM_ROWS + 1) * ELEMS_IN_TEST_ROW]; // testDataInput[row * ELEMS_IN_TEST_ROW + col]
   load_test(testDataInput);
 
+  int * actualTestDataInput = new int[(ACTUAL_TEST_NUM_ROWS + 1) * ELEMS_IN_TEST_ROW];
+  load_test2(actualTestDataInput);
+
   // output
   float * testDataOutput = new float[TEST_NUM_ROWS];
+  float * actualTestDataOutput = new float[ACTUAL_TEST_NUM_ROWS];
 
 
   // store comtributions
-  printf("Allocating space for cumSum...\n");
-  double * cumSum = new double[TRAINING_NUM_ROWS];
-  // std::unordered_map<pair, double, pair_hash> * cumSum = new std::unordered_map<pair, double, pair_hash>();
-  // cumSum->reserve(TRAINING_NUM_ROWS);
-
-  for (i = 0; i < TRAINING_NUM_ROWS; i++) {
-    if(i % 10000 == 0) {
-      printf("\r%f  cumSum zeroed out", ((float)i/ TRAINING_NUM_ROWS));
-    }
-    cumSum[i] = 0.;
-  }
-  printf("\ncumSum initialized and set to 0\n");
+  // printf("Allocating space for cumSum...\n");
+  // double * cumSum = new double[TRAINING_NUM_ROWS];
+  //
+  // for (i = 0; i < TRAINING_NUM_ROWS; i++) {
+  //   if(i % 10000 == 0) {
+  //     printf("\r%f  cumSum zeroed out", ((float)i/ TRAINING_NUM_ROWS));
+  //   }
+  //   cumSum[i] = 0.;
+  // }
+  // printf("\ncumSum initialized and set to 0\n");
 
 
   int f,ep;
@@ -316,7 +435,8 @@ int main() {
         int movieNumber = trainingData[i * ELEMS_IN_ROW + 1];
         double rating = (double)(trainingData[i * ELEMS_IN_ROW + 3]);
 
-
+        // temp
+        double * cumSum;
         // predictRatingTrain(int userNumber, int movieNumber, const double * userFeature, const double * movieFeature, double * cumSum, int curFeatToComp)
         double err = L_RATE * (rating - predictRatingTrain(userNumber, movieNumber, userFeature, movieFeature, cumSum, f, i));
 
@@ -325,7 +445,10 @@ int main() {
         userFeature[f * (NUM_USERS + 1) + userNumber] += err * movieFeature[f * (NUM_MOVIES + 1) + movieNumber];
         movieFeature[f * (NUM_MOVIES + 1) + movieNumber] += err * tmpUV;
 
-        // train(userNumber, movieNumber, rating, userFeature, movieFeature, f);
+
+        // userFeature[f * (NUM_USERS + 1) + userNumber] += err *
+
+
 
       }
     }
@@ -338,7 +461,17 @@ int main() {
 
     testDataOutput[i] = predictRatingTest(userNumber, movieNumber, userFeature, movieFeature);
   }
-
   write_output_to_file(testDataOutput);
+
+
+  for (i = 0; i < ACTUAL_TEST_NUM_ROWS; i++) {
+    int userNumber = actualTestDataInput[i * ELEMS_IN_TEST_ROW + 0]; // user
+    int movieNumber = actualTestDataInput[i * ELEMS_IN_TEST_ROW + 1]; // movie
+
+    actualTestDataOutput[i] = predictRatingTest(userNumber, movieNumber, userFeature, movieFeature);
+  }
+  write_output_to_file2(actualTestDataOutput);
+
+  exec("python bell.py");
 
 }
