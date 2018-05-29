@@ -8,7 +8,7 @@ https://classes.soe.ucsc.edu/cmps242/Fall09/proj/mpercy_svd_paper.pdf
 
 // submit code: pdnijpwr
 
-// g++ -o SVD_cpp fuckin_SVD.cpp
+// g++ -o SVD_cpp funk_SVD.cpp
 
 #include <stdio.h>
 #include <stdlib.h>
