@@ -104,7 +104,6 @@ def train_knn(UM_training_data):
 
 
 
-# TODO should move this somewhere else
 def predict_knn(to_predict, training_data, params):
     '''
     TODO: doesnt do shit rn
